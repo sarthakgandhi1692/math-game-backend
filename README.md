@@ -111,6 +111,14 @@ docker run -p 8080:8080 math-game-backend
 - Role-based access control
 - Session management
 
+## Web page screenshots
+- Generate Token
+<img width="817" alt="Screenshot 2025-06-16 at 00 02 45" src="https://github.com/user-attachments/assets/c086236f-454c-44ee-a7e9-5edb769b3610" />
+
+- Websocket and Game test
+<img width="815" alt="Screenshot 2025-06-16 at 00 02 22" src="https://github.com/user-attachments/assets/d9f01c20-9cc1-4dd3-bc6a-f7eea25ac32c" />
+
+
 ## 📦 Deployment
 The application can be deployed using Docker. A Dockerfile is provided for containerization.
 
