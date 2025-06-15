@@ -7,8 +7,8 @@ import com.mathGame.app.config.SupabaseProperties
 
 @SpringBootApplication
 @EnableConfigurationProperties(SupabaseProperties::class)
-class SupabaseAuthDemoApplication
+class MathTestApplication
 
 fun main(args: Array<String>) {
-    runApplication<SupabaseAuthDemoApplication>(*args)
+    runApplication<MathTestApplication>(*args)
 } 
