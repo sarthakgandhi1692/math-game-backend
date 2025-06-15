@@ -2,7 +2,6 @@ package com.mathGame.app.controller
 
 import com.mathGame.app.model.game.Player
 import com.mathGame.app.service.GameManager
-import com.mathGame.app.service.LeaderboardService
 import com.mathGame.app.service.PlayerAnswerService
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
@@ -11,7 +10,6 @@ import java.util.UUID
 @RequestMapping("/api/test/game")
 class GameTestController(
     private val gameService: GameManager,
-    private val leaderboardService: LeaderboardService,
     private val playerAnswerService: PlayerAnswerService
 ) {
     @PostMapping("/start")
@@ -57,14 +55,6 @@ class GameTestController(
             "userId" to userId,
             "questionId" to questionId,
             "answer" to answer
-        )
-    }
-
-    @GetMapping("/leaderboard")
-    fun getLeaderboard(): Map<String, Any> {
-        val topPlayers = leaderboardService.getTopPlayers()
-        return mapOf(
-            "topPlayers" to topPlayers
         )
     }
 
