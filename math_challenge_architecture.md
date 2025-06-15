@@ -30,6 +30,28 @@ A real-time multiplayer math challenge game where Android users can:
         |                                     |                                       |
 ```
 
+### Backend Structure
+```
+src/
+├── main/
+│   ├── kotlin/
+│   │   ├── com.mathGame.app/
+│   │   │   ├── config/            # Configuration classes
+│   │   │   ├── constants/         # Modular constants
+│   │   │   ├── controller/        # REST & WebSocket endpoints
+│   │   │   ├── model/            # Data models
+│   │   │   │   ├── database/     # Database entities
+│   │   │   │   ├── game/         # Game logic models
+│   │   │   │   └── websocket/    # WebSocket messages
+│   │   │   ├── repository/       # Database repositories
+│   │   │   ├── security/         # JWT & auth handling
+│   │   │   ├── service/          # Business logic
+│   │   │   └── websocket/        # WebSocket handlers
+│   └── resources/
+│       ├── application.yml       # Application config
+│       └── static/              # Static web resources
+```
+
 ---
 
 ## 🧹 Key Components
@@ -55,6 +77,14 @@ Handles:
 * WebSocket endpoint for real-time communication
 * Game session management, scoring, result calculation
 * Leaderboard aggregation
+
+#### Constants Organization
+The backend uses a modular constants organization:
+* `ApiConstants`: API-related configurations (ports, timeouts)
+* `DatabaseConstants`: Database connection and pool settings
+* `PlayerConstants`: Player-specific defaults and limits
+* `QuestionConstants`: Question generation parameters and operators
+* `GameConstants`: Game rules and timing parameters
 
 ### 📄 Supabase
 
