@@ -145,91 +145,125 @@ Handles:
 
 ### From Client:
 * `JOIN_WAITING_ROOM` - Request to join the waiting room
-* `ANSWER_SUBMISSION` - Submit answer for current question
-* `PING` - Keep-alive message
+* `ANSWER_SUBMISSION` - Submit answer for current question with questionId and answer
+* `PING` - Keep-alive message with timestamp for latency tracking
 
 ### From Server:
-* `CONNECTED` - Initial connection confirmation
-* `GAME_STARTED` - Game room created and started
-* `QUESTION` - New question for player
-* `SCORE_UPDATE` - Real-time score updates
-* `GAME_ENDED` - Game completion with results
+* `CONNECTED` - Initial connection confirmation with userId and welcome message
+* `GAME_STARTED` - Game room created with roomId, opponentId, opponentName, and startTime
+* `QUESTION` - New question containing questionId, expression, questionNumber, and totalQuestions
+* `SCORE_UPDATE` - Real-time score updates with yourScore and opponentScore
+* `GAME_ENDED` - Game completion with final results
 * `ERROR` - Error messages and notifications
 
 ## 🔒 Security
 
 ### WebSocket Authentication
 * JWT token required in WebSocket connection URL
-* `WebSocketAuthHandshakeInterceptor` validates tokens
-* Token verification using Supabase JWKS
-* User information stored in WebSocket session attributes
+* Token verification using Supabase JWT service
+* User information (userId, email, name) stored in WebSocket session attributes
+* Duplicate connection handling - closes old session if user connects again
 
 ### REST API Security
-* JWT verification for all REST endpoints
-* Role-based access control
+* JWT verification for all protected endpoints
+* Public endpoints available at `/api/public/*`
+* Role-based access control via JWT claims
 * Secure session management
 
 ## 🎮 Game Flow
 
 1. **Initial Connection**
    * Client connects to WebSocket with JWT
-   * Server validates token and sends `CONNECTED` message
-   * Client receives user information and connection status
+   * Server validates token and stores user session
+   * Server sends `CONNECTED` message with userId
 
 2. **Login & Authentication**
-   * Android → Supabase → Get JWT
-   * WebSocket connects with JWT
-   * Server verifies token and establishes secure connection
+   * Client obtains JWT via Supabase Auth
+   * Token verification through `/api/auth/verify` endpoint
+   * WebSocket connection established with valid JWT
 
 3. **Pairing via WebSocket**
    * Client sends `JOIN_WAITING_ROOM`
-   * Server pairs two users, creates room
-   * Players are notified of room creation
+   * Server creates/finds game room
+   * When two players match:
+     * Game room created with unique ID
+     * Both players notified via `GAME_STARTED`
+     * Initial question sent to both players
 
-4. **Game Start**
-   * Server sends `GAME_STARTED` with opponent details
-   * Server sends first `QUESTION`
-   * Backend timer starts (60 seconds)
-   * Question index tracking begins
+4. **Game Progress**
+   * Server tracks question index per user
+   * Questions sent sequentially via `QUESTION` messages
+   * Each question includes:
+     * Question number and total questions count
+     * Math expression to solve
+     * Unique questionId for answer tracking
 
 5. **Answer Submission**
-   * Clients send `ANSWER_SUBMISSION` messages
-   * Backend validates and scores in real-time
-   * Server sends `SCORE_UPDATE` to both players
-   * Next question is sent automatically
+   * Client sends `ANSWER_SUBMISSION` with questionId and answer
+   * Server validates answer and updates scores
+   * Both players receive `SCORE_UPDATE`
+   * Next question sent automatically
+   * Process continues until all questions answered or time expires
 
 6. **Game End**
-   * After 60s, backend sends `GAME_ENDED`
-   * Updates Supabase DB with results
-   * Updates leaderboard
-   * Cleans up game resources
+   * Game can end in multiple ways:
+     * All questions answered
+     * Time limit reached
+     * Player disconnection
+   * Final scores saved to database
+   * Leaderboard updated
+   * Players notified via `GAME_ENDED`
 
-7. **Results & Leaderboard**
-   * Leaderboard updates via REST or WebSocket push
-   * Players can view their performance statistics
+7. **Error Handling**
+   * Connection errors handled gracefully
+   * Player disconnection triggers game end
+   * Opponent notified of disconnection
+   * Invalid messages return error responses
+   * Duplicate connections managed automatically
 
 ## 🧪 Testing
 
-### WebSocket Test Client
-* HTML-based test client (`websocket-test.html`)
-* Supports all WebSocket message types
-* Real-time game simulation
-* Debug logging and connection status
-
 ### Test Endpoints
-* `/api/test/game/start` - Start test game
-* `/api/test/game/answer` - Submit test answer
-* `/api/test/game/leaderboard` - Test leaderboard
+* `/api/test/game/start` - Creates two test players and starts a game session
+* `/api/test/game/answer` - Submit test answer with userId, questionId, and answer
+* `/api/test/game/leaderboard` - Retrieve current leaderboard data
+* `/api/test/game/player/{userId}/answers` - Get all answers for a specific player
+* `/api/test/db` - Test database connectivity and version
+
+### Authentication Testing
+* Public endpoints available for basic testing
+* Protected endpoints for testing with valid JWT
+* Token verification and role-based access testing
+
+### Game Logic Testing
+* Test game creation and player matching
+* Answer submission and scoring verification
+* Leaderboard updates and calculations
+* Player disconnection handling
+
+### WebSocket Testing
+* Connection establishment with JWT
+* Message type handling and validation
+* Game state management
+* Error scenarios and recovery
+* Duplicate connection handling
+* Player disconnection scenarios
 
 ---
 
 ## 🔌 REST API Endpoints (Non-Realtime)
 
-| Method | Endpoint        | Description              |
-| ------ | --------------- | ------------------------ |
-| POST   | `/auth/verify`  | Verifies Supabase JWT    |
-| GET    | `/session/{id}` | Returns session details  |
-| GET    | `/leaderboard`  | Fetch global leaderboard |
+| Method | Endpoint                    | Description                           | Access     |
+| ------ | --------------------------- | ------------------------------------- | ---------- |
+| POST   | `/api/auth/verify`         | Verifies JWT token                    | Public     |
+| GET    | `/api/public/test`         | Public test endpoint                  | Public     |
+| GET    | `/api/protected`           | Protected endpoint example            | Protected  |
+| GET    | `/api/protected/details`   | Protected endpoint with user details  | Protected  |
+| GET    | `/api/test/db`             | Test database connection              | Protected  |
+| POST   | `/api/test/game/start`     | Start test game with two players     | Protected  |
+| POST   | `/api/test/game/answer`    | Submit test answer                    | Protected  |
+| GET    | `/api/test/game/leaderboard`| Get leaderboard data                | Protected  |
+| GET    | `/api/test/game/player/{userId}/answers` | Get player's answers    | Protected  |
 
 ---
 

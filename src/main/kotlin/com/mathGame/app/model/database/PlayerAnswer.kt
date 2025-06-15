@@ -26,6 +26,9 @@ data class PlayerAnswer(
     @Column(name = "is_correct", nullable = false)
     val isCorrect: Boolean,
 
+    @Column(name = "expression", nullable = false)
+    val expression: String,
+
     @Column(name = "created_at", nullable = false)
     val createdAt: Instant = Instant.now()
 ) {
@@ -37,6 +40,7 @@ data class PlayerAnswer(
         questionId = UUID.randomUUID(),
         answer = 0,
         isCorrect = false,
+        expression = "",
         createdAt = Instant.now()
     )
 } 

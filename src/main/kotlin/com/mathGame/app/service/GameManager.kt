@@ -212,6 +212,13 @@ class GameManager(
             return false
         }
         
+        // Get the question to access its expression
+        val question = room.questions.find { it.id == questionId }
+        if (question == null) {
+            logger.error("Question $questionId not found in room $roomId")
+            return false
+        }
+        
         room.recordAnswer(userId, questionId, answer)
         val isCorrect = room.isAnswerCorrect(userId, questionId)
         
@@ -219,13 +226,14 @@ class GameManager(
             room.updateScore(userId, true)
         }
         
-        // Save answer to database
+        // Save answer to database with expression
         playerAnswerService.saveAnswer(
             gameSessionId = UUID.fromString(roomId),
             playerId = UUID.fromString(userId),
             questionId = UUID.fromString(questionId),
             answer = answer,
-            isCorrect = isCorrect
+            isCorrect = isCorrect,
+            expression = question.expression
         )
         
         return isCorrect

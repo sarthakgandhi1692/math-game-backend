@@ -11,13 +11,21 @@ class PlayerAnswerService(
     private val playerAnswerRepository: PlayerAnswerRepository
 ) {
     @Transactional
-    fun saveAnswer(gameSessionId: UUID, playerId: UUID, questionId: UUID, answer: Int, isCorrect: Boolean): PlayerAnswer {
+    fun saveAnswer(
+        gameSessionId: UUID,
+        playerId: UUID,
+        questionId: UUID,
+        answer: Int,
+        isCorrect: Boolean,
+        expression: String
+    ): PlayerAnswer {
         val playerAnswer = PlayerAnswer(
             gameSessionId = gameSessionId,
             playerId = playerId,
             questionId = questionId,
             answer = answer,
-            isCorrect = isCorrect
+            isCorrect = isCorrect,
+            expression = expression
         )
         return playerAnswerRepository.save(playerAnswer)
     }
