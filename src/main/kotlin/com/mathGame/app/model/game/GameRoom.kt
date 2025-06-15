@@ -1,5 +1,6 @@
 package com.mathGame.app.model.game
 
+import com.mathGame.app.constants.PlayerConstants
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -14,8 +15,8 @@ data class Player(
     val userId: String,
     val email: String,
     val name: String,
-    var score: Int = 0,
-    var correctAnswers: Int = 0
+    var score: Int = PlayerConstants.INITIAL_SCORE,
+    var correctAnswers: Int = PlayerConstants.INITIAL_CORRECT_ANSWERS
 )
 
 data class Question(

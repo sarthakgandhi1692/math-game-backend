@@ -1,5 +1,6 @@
 package com.mathGame.app.config
 
+import com.mathGame.app.constants.DatabaseConstants
 import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties(prefix = "supabase")
@@ -17,6 +18,6 @@ data class SupabaseProperties(
         var url: String = "",
         var username: String = "",
         var password: String = "",
-        var schema: String = "public"
+        var schema: String = DatabaseConstants.DEFAULT_SCHEMA
     ) 
 }

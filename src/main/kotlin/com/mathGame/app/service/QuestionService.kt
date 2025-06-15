@@ -1,20 +1,26 @@
 package com.mathGame.app.service
 
-import com.mathGame.app.model.game.Question
+import com.mathGame.app.constants.QuestionConstants
+import com.mathGame.app.model.game.Question as GameQuestion
 import org.springframework.stereotype.Service
 import kotlin.random.Random
 
 @Service
 class QuestionService {
     
-    private val operations = listOf("+", "-", "*", "/")
+    private val operations = listOf(
+        QuestionConstants.ADDITION,
+        QuestionConstants.SUBTRACTION,
+        QuestionConstants.MULTIPLICATION,
+        QuestionConstants.DIVISION
+    )
     private val random = Random.Default
     
-    fun generateQuestions(count: Int): List<Question> {
+    fun generateQuestions(count: Int): List<GameQuestion> {
         return (1..count).map { generateQuestion() }
     }
     
-    private fun generateQuestion(): Question {
+    private fun generateQuestion(): GameQuestion {
         // Randomly choose question type
         return when(random.nextInt(4)) {
             0 -> generateSimpleAddition()
@@ -24,58 +30,58 @@ class QuestionService {
         }
     }
     
-    private fun generateSimpleAddition(): Question {
-        val a = random.nextInt(1, 50)
-        val b = random.nextInt(1, 50)
-        val expression = "$a + $b"
+    private fun generateSimpleAddition(): GameQuestion {
+        val a = random.nextInt(QuestionConstants.MIN_SIMPLE_NUMBER, QuestionConstants.MAX_ADDITION_NUMBER)
+        val b = random.nextInt(QuestionConstants.MIN_SIMPLE_NUMBER, QuestionConstants.MAX_ADDITION_NUMBER)
+        val expression = "$a ${QuestionConstants.ADDITION} $b"
         val answer = a + b
         
-        return Question(expression = expression, correctAnswer = answer)
+        return GameQuestion(expression = expression, correctAnswer = answer)
     }
     
-    private fun generateSimpleSubtraction(): Question {
+    private fun generateSimpleSubtraction(): GameQuestion {
         // Ensure positive result
-        val a = random.nextInt(10, 100)
-        val b = random.nextInt(1, a)
-        val expression = "$a - $b"
+        val a = random.nextInt(QuestionConstants.MIN_SIMPLE_NUMBER, QuestionConstants.MAX_SUBTRACTION_NUMBER)
+        val b = random.nextInt(QuestionConstants.MIN_SIMPLE_NUMBER, a)
+        val expression = "$a ${QuestionConstants.SUBTRACTION} $b"
         val answer = a - b
         
-        return Question(expression = expression, correctAnswer = answer)
+        return GameQuestion(expression = expression, correctAnswer = answer)
     }
     
-    private fun generateSimpleMultiplication(): Question {
-        val a = random.nextInt(1, 12)
-        val b = random.nextInt(1, 12)
-        val expression = "$a × $b"
+    private fun generateSimpleMultiplication(): GameQuestion {
+        val a = random.nextInt(QuestionConstants.MIN_SIMPLE_NUMBER, QuestionConstants.MAX_MULTIPLICATION_NUMBER)
+        val b = random.nextInt(QuestionConstants.MIN_SIMPLE_NUMBER, QuestionConstants.MAX_MULTIPLICATION_NUMBER)
+        val expression = "$a ${QuestionConstants.MULTIPLICATION} $b"
         val answer = a * b
         
-        return Question(expression = expression, correctAnswer = answer)
+        return GameQuestion(expression = expression, correctAnswer = answer)
     }
     
-    private fun generateSimpleDivision(): Question {
+    private fun generateSimpleDivision(): GameQuestion {
         // Generate division with no remainder
-        val b = random.nextInt(1, 12)
-        val answer = random.nextInt(1, 12)
+        val b = random.nextInt(QuestionConstants.MIN_SIMPLE_NUMBER, QuestionConstants.MAX_DIVISION_NUMBER)
+        val answer = random.nextInt(QuestionConstants.MIN_SIMPLE_NUMBER, QuestionConstants.MAX_DIVISION_NUMBER)
         val a = b * answer
-        val expression = "$a ÷ $b"
+        val expression = "$a ${QuestionConstants.DIVISION} $b"
         
-        return Question(expression = expression, correctAnswer = answer)
+        return GameQuestion(expression = expression, correctAnswer = answer)
     }
     
-    fun generateComplexQuestion(): Question {
+    fun generateComplexQuestion(): GameQuestion {
         // For more advanced questions with multiple operations
-        val numOperations = random.nextInt(1, 3)
+        val numOperations = random.nextInt(1, QuestionConstants.MAX_COMPLEX_OPERATIONS)
         
-        var result = random.nextInt(1, 20)
+        var result = random.nextInt(QuestionConstants.MIN_COMPLEX_NUMBER, QuestionConstants.MAX_COMPLEX_NUMBER)
         var expression = result.toString()
         
         repeat(numOperations) {
             val operation = operations[random.nextInt(operations.size)]
             val operand = when (operation) {
-                "+" -> random.nextInt(1, 20)
-                "-" -> random.nextInt(1, result)
-                "*" -> random.nextInt(1, 10)
-                "/" -> {
+                QuestionConstants.ADDITION -> random.nextInt(QuestionConstants.MIN_COMPLEX_NUMBER, QuestionConstants.MAX_COMPLEX_NUMBER)
+                QuestionConstants.SUBTRACTION -> random.nextInt(QuestionConstants.MIN_COMPLEX_NUMBER, result)
+                QuestionConstants.MULTIPLICATION -> random.nextInt(QuestionConstants.MIN_COMPLEX_NUMBER, 10)
+                QuestionConstants.DIVISION -> {
                     // Find a number that divides evenly into result
                     val divisors = (1..result).filter { result % it == 0 }
                     if (divisors.isNotEmpty()) divisors[random.nextInt(divisors.size)] else 1
@@ -84,16 +90,16 @@ class QuestionService {
             }
             
             result = when (operation) {
-                "+" -> result + operand
-                "-" -> result - operand
-                "*" -> result * operand
-                "/" -> result / operand
+                QuestionConstants.ADDITION -> result + operand
+                QuestionConstants.SUBTRACTION -> result - operand
+                QuestionConstants.MULTIPLICATION -> result * operand
+                QuestionConstants.DIVISION -> result / operand
                 else -> result
             }
             
             expression = "($expression) $operation $operand"
         }
         
-        return Question(expression = expression, correctAnswer = result)
+        return GameQuestion(expression = expression, correctAnswer = result)
     }
 } 
