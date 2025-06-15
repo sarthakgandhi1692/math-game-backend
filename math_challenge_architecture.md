@@ -342,15 +342,3 @@ The backend uses a modular constants organization:
 | Hosting  | Supabase or custom cloud for backend                  |
 
 ---
-
-## ✅ Next Steps
-
-1. Design WebSocket protocol contract
-2. Build game room lifecycle and pairing logic
-3. Implement real-time question dispatch & answer tracking
-4. Add game session scoring engine
-5. Connect Android to WS endpoint using OkHttp
-6. Polish UI/UX with real-time feedback
-7. Monitor performance and scalability
-
----
