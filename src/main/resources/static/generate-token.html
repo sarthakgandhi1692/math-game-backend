@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Test Token</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .container {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #3ECF8E;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #2EBF7E;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .error {
+            color: red;
+            margin: 10px 0;
+        }
+        .success {
+            color: green;
+            margin: 10px 0;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Generate Test Token</h2>
+        <div>
+            <label for="userId">User ID:</label>
+            <input type="text" id="userId" placeholder="Enter user ID" value="test-user-123"/>
+            
+            <label for="email">Email:</label>
+            <input type="email" id="email" placeholder="Enter email" value="test@example.com"/>
+            
+            <label for="role">Role:</label>
+            <input type="text" id="role" placeholder="Enter role" value="authenticated"/>
+            
+            <button onclick="generateToken()">Generate Token</button>
+        </div>
+        <div id="error" class="error"></div>
+        <div id="success" class="success"></div>
+    </div>
+
+    <div class="container">
+        <h3>Generated Token</h3>
+        <pre id="token"></pre>
+    </div>
+
+    <div class="container">
+        <h3>Test Protected Endpoints</h3>
+        <button onclick="testProtectedEndpoint('/api/protected')">Test Basic Protected Endpoint</button>
+        <button onclick="testProtectedEndpoint('/api/protected/details')">Test Protected Details Endpoint</button>
+        <pre id="response"></pre>
+    </div>
+
+    <script>
+        async function generateToken() {
+            const userId = document.getElementById('userId').value;
+            const email = document.getElementById('email').value;
+            const role = document.getElementById('role').value;
+
+            try {
+                const response = await fetch('/api/public/generate-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        email: email,
+                        role: role
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById('success').textContent = 'Token generated successfully!';
+                document.getElementById('error').textContent = '';
+                document.getElementById('token').textContent = data.token;
+            } catch (error) {
+                document.getElementById('error').textContent = `Error: ${error.message}`;
+                document.getElementById('success').textContent = '';
+            }
+        }
+
+        async function testProtectedEndpoint(endpoint) {
+            const token = document.getElementById('token').textContent;
+            if (!token) {
+                document.getElementById('error').textContent = 'Please generate a token first';
+                return;
+            }
+
+            try {
+                const response = await fetch(endpoint, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('response').textContent = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html> 

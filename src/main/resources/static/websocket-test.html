@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Math Game WebSocket Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .log {
+            background-color: #f5f5f5;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            margin-top: 10px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button {
+            padding: 8px 15px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        input {
+            padding: 5px;
+            margin: 5px;
+            width: 300px;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.connected {
+            background-color: #e6ffe6;
+            border: 1px solid #b3ffb3;
+        }
+        .status.disconnected {
+            background-color: #ffe6e6;
+            border: 1px solid #ffb3b3;
+        }
+        .user-info {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .game-container {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            background-color: #f9fff9;
+        }
+        .question {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .answer-input {
+            display: block;
+            width: 100px;
+            padding: 10px;
+            font-size: 18px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .score-display {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        .score-box {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+            width: 100px;
+        }
+        .timer {
+            font-size: 24px;
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Authentication</h2>
+        <div>
+            <input type="text" id="token" placeholder="Enter your JWT token" style="width: 60%;" />
+            <button onclick="validateToken()">Validate Token</button>
+        </div>
+        <div id="tokenInfo" class="user-info"></div>
+    </div>
+
+    <div class="container">
+        <h2>WebSocket Connection</h2>
+        <div>
+            <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()">Disconnect</button>
+        </div>
+        <div id="connectionStatus" class="status disconnected">
+            Status: Disconnected
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Game Actions</h2>
+        <button onclick="joinWaitingRoom()">Join Waiting Room</button>
+        <button onclick="sendPing()">Send Ping</button>
+    </div>
+
+    <div id="gameContainer" class="game-container">
+        <h2>Math Challenge Game</h2>
+        <div class="timer" id="timer">60</div>
+        
+        <div class="score-display">
+            <div class="score-box">
+                <div>You</div>
+                <div id="yourScore">0</div>
+            </div>
+            <div class="score-box">
+                <div id="opponentName">Opponent</div>
+                <div id="opponentScore">0</div>
+            </div>
+        </div>
+        
+        <div class="question" id="question">Waiting for question...</div>
+        
+        <input type="number" id="answerInput" class="answer-input" placeholder="Answer" />
+        <button onclick="submitAnswer()" style="display: block; margin: 10px auto;">Submit Answer</button>
+        
+        <div id="questionCounter" style="text-align: center; margin-top: 10px;">Question: 0/0</div>
+    </div>
+
+    <div class="container">
+        <h2>WebSocket Log</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentToken = null;
+        let currentQuestion = null;
+        let gameActive = false;
+        let gameTimer = null;
+        let timeLeft = 60;
+        
+        const log = document.getElementById('log');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const tokenInfo = document.getElementById('tokenInfo');
+        const gameContainer = document.getElementById('gameContainer');
+        const timerElement = document.getElementById('timer');
+        const questionElement = document.getElementById('question');
+        const answerInput = document.getElementById('answerInput');
+        const yourScoreElement = document.getElementById('yourScore');
+        const opponentScoreElement = document.getElementById('opponentScore');
+        const opponentNameElement = document.getElementById('opponentName');
+        const questionCounterElement = document.getElementById('questionCounter');
+
+        function addToLog(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function updateConnectionStatus(connected, message = '') {
+            connectionStatus.className = `status ${connected ? 'connected' : 'disconnected'}`;
+            connectionStatus.textContent = `Status: ${connected ? 'Connected' : 'Disconnected'}${message ? ' - ' + message : ''}`;
+        }
+
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function validateToken() {
+            const tokenInput = document.getElementById('token');
+            const token = tokenInput.value.trim();
+            
+            if (!token) {
+                addToLog('Please enter a JWT token', 'error');
+                tokenInfo.textContent = '';
+                return;
+            }
+
+            const payload = parseJwt(token);
+            if (!payload) {
+                addToLog('Invalid JWT token format', 'error');
+                tokenInfo.textContent = '';
+                return;
+            }
+
+            currentToken = token;
+            tokenInfo.textContent = `Token info - User ID: ${payload.sub}, Email: ${payload.email || 'N/A'}, Role: ${payload.role || 'N/A'}`;
+            addToLog('Token validated successfully', 'success');
+        }
+
+        function connect() {
+            if (!currentToken) {
+                addToLog('Please validate your JWT token first', 'error');
+                return;
+            }
+
+            try {
+                connectWebSocket();
+            } catch (error) {
+                addToLog(`Connection error: ${error.message}`, 'error');
+                updateConnectionStatus(false, error.message);
+            }
+        }
+
+        function connectWebSocket() {
+            // Close existing connection if any
+            if (ws) {
+                ws.close();
+            }
+
+            try {
+                // Create WebSocket connection with authorization token
+                const wsUrl = `ws://${window.location.host}/ws?token=${encodeURIComponent(currentToken)}`;
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = () => {
+                    addToLog('Connected to WebSocket', 'success');
+                    updateConnectionStatus(true);
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        addToLog(`Received: ${JSON.stringify(data)}`, 'info');
+                        handleServerMessage(data);
+                    } catch (e) {
+                        addToLog(`Received: ${event.data}`, 'info');
+                    }
+                };
+
+                ws.onclose = (event) => {
+                    addToLog(`Disconnected: ${event.reason || 'No reason provided'}`, 'error');
+                    updateConnectionStatus(false, event.reason);
+                    ws = null;
+                    stopGame();
+                };
+
+                ws.onerror = (error) => {
+                    addToLog(`WebSocket error: ${error.message}`, 'error');
+                    updateConnectionStatus(false, error.message);
+                };
+
+            } catch (error) {
+                addToLog(`Failed to create WebSocket: ${error.message}`, 'error');
+                updateConnectionStatus(false, error.message);
+            }
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+                addToLog('Disconnected', 'info');
+                updateConnectionStatus(false);
+                stopGame();
+            }
+        }
+
+        function joinWaitingRoom() {
+            if (!ws) {
+                addToLog('Not connected to WebSocket', 'error');
+                return;
+            }
+
+            const message = {
+                type: 'JOIN_WAITING_ROOM'
+            };
+
+            ws.send(JSON.stringify(message));
+            addToLog('Sent join waiting room request', 'info');
+        }
+
+        function sendPing() {
+            if (!ws) {
+                addToLog('Not connected to WebSocket', 'error');
+                return;
+            }
+
+            const message = {
+                type: 'PING',
+                timestamp: Date.now()
+            };
+
+            ws.send(JSON.stringify(message));
+            addToLog('Sent ping', 'info');
+        }
+        
+        function submitAnswer() {
+            if (!ws || !currentQuestion || !gameActive) {
+                addToLog('Cannot submit answer - no active game or question', 'error');
+                return;
+            }
+            
+            const answer = parseInt(answerInput.value);
+            if (isNaN(answer)) {
+                addToLog('Please enter a valid number', 'error');
+                return;
+            }
+            
+            const message = {
+                type: 'ANSWER_SUBMISSION',
+                questionId: currentQuestion.questionId,
+                answer: answer,
+                timestamp: Date.now()
+            };
+            
+            ws.send(JSON.stringify(message));
+            addToLog(`Submitted answer: ${answer}`, 'info');
+            
+            // Clear the input field
+            answerInput.value = '';
+        }
+        
+        function handleServerMessage(message) {
+            switch (message.type) {
+                case 'GAME_STARTED':
+                    startGame(message);
+                    break;
+                case 'QUESTION':
+                    showQuestion(message);
+                    break;
+                case 'SCORE_UPDATE':
+                    updateScore(message);
+                    break;
+                case 'GAME_ENDED':
+                    endGame(message);
+                    break;
+                case 'ERROR':
+                    addToLog(`Server error: ${message.message}`, 'error');
+                    break;
+            }
+        }
+        
+        function startGame(message) {
+            gameActive = true;
+            gameContainer.style.display = 'block';
+            opponentNameElement.textContent = message.opponentName;
+            yourScoreElement.textContent = '0';
+            opponentScoreElement.textContent = '0';
+            
+            // Start the timer
+            timeLeft = 60;
+            updateTimer();
+            gameTimer = setInterval(updateTimer, 1000);
+            
+            addToLog(`Game started with opponent: ${message.opponentName}`, 'success');
+        }
+        
+        function showQuestion(message) {
+            currentQuestion = message;
+            questionElement.textContent = message.expression;
+            questionCounterElement.textContent = `Question: ${message.questionNumber}/${message.totalQuestions}`;
+            answerInput.focus();
+        }
+        
+        function updateScore(message) {
+            yourScoreElement.textContent = message.yourScore;
+            opponentScoreElement.textContent = message.opponentScore;
+        }
+        
+        function endGame(message) {
+            gameActive = false;
+            clearInterval(gameTimer);
+            
+            let resultText = '';
+            switch (message.result) {
+                case 'WIN':
+                    resultText = 'You won!';
+                    break;
+                case 'LOSE':
+                    resultText = 'You lost!';
+                    break;
+                case 'DRAW':
+                    resultText = 'It\'s a draw!';
+                    break;
+            }
+            
+            questionElement.textContent = `Game Over - ${resultText}`;
+            questionCounterElement.textContent = `Correct answers: ${message.correctAnswers}/${message.totalQuestions}`;
+            
+            addToLog(`Game ended: ${resultText} Your score: ${message.yourScore}, Opponent: ${message.opponentScore}`, 'info');
+        }
+        
+        function updateTimer() {
+            timeLeft--;
+            timerElement.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                clearInterval(gameTimer);
+                timerElement.textContent = '0';
+            }
+        }
+        
+        function stopGame() {
+            gameActive = false;
+            gameContainer.style.display = 'none';
+            clearInterval(gameTimer);
+            currentQuestion = null;
+        }
+        
+        // Add event listener for Enter key on answer input
+        answerInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                submitAnswer();
+            }
+        });
+    </script>
+</body>
+</html> 

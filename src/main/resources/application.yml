@@ -1,0 +1,49 @@
+server:
+  port: ${SERVER_PORT:8080}
+  # Enable graceful shutdown
+  shutdown: graceful
+  # Tomcat configuration for better port handling
+  tomcat:
+    connection-timeout: 20000
+    keep-alive-timeout: 20000
+
+spring:
+  application:
+    name: math-game-backend
+  datasource:
+    url: ${SUPABASE_DB_URL}
+    username: ${SUPABASE_DB_USERNAME}
+    password: ${SUPABASE_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+supabase:
+  apiUrl: ${SUPABASE_API_URL}
+  anonKey: ${SUPABASE_ANON_KEY}
+  jwt:
+    secret: ${SUPABASE_JWT_SECRET}
+  database:
+    url: ${SUPABASE_DB_URL}
+    username: ${SUPABASE_DB_USERNAME}
+    password: ${SUPABASE_DB_PASSWORD}
+    schema: public
+
+logging:
+  level:
+    root: INFO
+    com.example.app: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+    okhttp3: DEBUG 

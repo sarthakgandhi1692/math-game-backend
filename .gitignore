@@ -1,0 +1,70 @@
+### Kotlin ###
+*.class
+*.jar
+*.war
+*.ear
+
+# Kotlin specific
+*.kotlin_module
+
+### Gradle ###
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.gradle-cache/
+**/out/
+
+# Gradle logs
+gradle-app.setting
+gradle.log
+
+### IntelliJ IDEA ###
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.idea_modules/
+
+# IntelliJ project-specific
+/modules.xml
+/.idea/*.xml
+/.idea/workspace.xml
+/.idea/tasks.xml
+/.idea/gradle.xml
+/.idea/libraries
+
+# User-specific
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf/
+
+# Virtual Machine crash logs
+hs_err_pid*
+
+### OS Files ###
+.DS_Store
+Thumbs.db
+
+### Logs ###
+*.log
+logs/
+*.pid
+
+### Test reports ###
+test-results/
+test-output/
+reports/
+
+### Spring Boot ###
+# Avoid committing sensitive application settings
+.env
+
+### Others ###
+*.swp
+*.swo
+*.tmp
+*.bak
+*.orig
+*.rej
