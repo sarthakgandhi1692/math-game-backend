@@ -242,7 +242,7 @@
 
             try {
                 // Create WebSocket connection with authorization token
-                const wsUrl = `ws://${window.location.host}/ws?token=${encodeURIComponent(currentToken)}`;
+                const wsUrl = `wss://${window.location.host}/ws?token=${encodeURIComponent(currentToken)}`;
                 ws = new WebSocket(wsUrl);
 
                 ws.onopen = () => {
